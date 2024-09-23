@@ -1,0 +1,8 @@
+[
+    { "usuarioId": "1", "nombreCompleto": "Juan Perez", "puesto": "Administrador" },
+    { "usuarioId": "987654321", "nombreCompleto": "Maria Lopez", "puesto": "Empleado" },
+    { "usuarioId": "123123123", "nombreCompleto": "Carlos Martinez", "puesto": "Supervisor" },
+    { "usuarioId": "321321321", "nombreCompleto": "Ana Fernandez", "puesto": "Empleado" },
+    { "usuarioId": "456456456", "nombreCompleto": "Lucia Gomez", "puesto": "Administrador" }
+  ]
+  

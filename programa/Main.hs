@@ -1,7 +1,13 @@
 import System.IO (hFlush, stdout)
+import Utils (leerUsuarios, validarUsuario, Usuario(..))
+import Mobiliario (cargarYMostrarMobiliario)
+import Data.Maybe (isNothing, fromJust)
 
-showOperativas :: IO ()
-showOperativas = do
+showOperativas :: Usuario -> IO ()
+showOperativas usuario = do
+    putStrLn "+-------------------------------------+"
+    putStrLn ("Bienvenido, " ++ nombreCompleto usuario ++ " (" ++ puesto usuario ++ ")")
+    putStrLn "+-------------------------------------+"
     putStrLn "+-------------------------------------+"
     putStrLn "|        OPCIONES OPERATIVAS          |"
     putStrLn "+-------------------------------------+"
@@ -10,24 +16,28 @@ showOperativas = do
     putStrLn "| 3 | Informe de Reservas             |"
     putStrLn "| 4 | Volver al Menú Principal        |"
     putStrLn "+-------------------------------------+"
-    putStr "Seleccione una opción:"
+    putStr "Seleccione una opción: "
     hFlush stdout
 
--- Manejar Opciones Operativas
-handleOperativas :: String -> IO ()
-handleOperativas option = case option of
+handleOperativas :: Usuario -> String -> IO ()
+handleOperativas usuario option = case option of
     "1" -> do
         putStrLn "Opción: Crear y Mostrar Mobiliario"
-        -- Aquí va la lógica para crear y mostrar mobiliario
-        menuOperativas
+        -- Pedir al usuario la ruta del archivo CSV
+        putStrLn "Ingrese la ruta del archivo CSV de mobiliario: "
+        hFlush stdout
+        archivoCSV <- getLine
+        let archivoBD = "mobiliario.json"  -- Archivo JSON para almacenar la base de datos de mobiliario
+        cargarYMostrarMobiliario archivoCSV archivoBD
+        menuOperativas  -- Volver al menú operativas
     "2" -> do
         putStrLn "Opción: Cargar y Mostrar Salas"
-        -- Aquí va la lógica para cargar y mostrar salas
-        menuOperativas
+        -- Lógica para cargar y mostrar salas
+        menuOperativas usuario
     "3" -> do
         putStrLn "Opción: Informe de Reservas"
-        -- Aquí va la lógica para mostrar el informe de reservas
-        menuOperativas
+        -- Lógica para mostrar informe de reservas
+        menuOperativas usuario
     "4" -> do
         putStrLn "Volviendo al Menú Principal..."
         mainMenu
@@ -35,14 +45,37 @@ handleOperativas option = case option of
         putStrLn "+-------------------------------------+"
         putStrLn "| Opción no válida. Intente de nuevo. |"
         putStrLn "+-------------------------------------+"
-        menuOperativas
+        menuOperativas usuario
 
--- Menú de Opciones Operativas
-menuOperativas :: IO ()
-menuOperativas = do
-    showOperativas
+solicitarIDUsuario :: IO String
+solicitarIDUsuario = do
+    putStr "Ingrese su ID de usuario (cédula): "
+    hFlush stdout
+    getLine
+
+validarUsuarioMenu :: IO (Maybe Usuario)
+validarUsuarioMenu = do
+    usuarios <- leerUsuarios "usuarios.json"
+    case usuarios of
+        Left err -> do
+            putStrLn ("Error al leer el archivo de usuarios: " ++ err)
+            return Nothing
+        Right usuariosList -> do
+            idUsuario <- solicitarIDUsuario
+            let usuarioValido = validarUsuario idUsuario usuariosList
+            if isNothing usuarioValido
+                then do
+                    putStrLn "ID de usuario no válido. Intente nuevamente."
+                    validarUsuarioMenu
+                else do
+                    let usuario = fromJust usuarioValido
+                    return (Just usuario)
+
+menuOperativas :: Usuario -> IO ()
+menuOperativas usuario = do
+    showOperativas usuario
     option <- getLine
-    handleOperativas option
+    handleOperativas usuario option
 
 showGenerales :: IO ()
 showGenerales = do
@@ -55,27 +88,22 @@ showGenerales = do
     putStrLn "| 4 | Consulta Disponibilidad Sala  |"
     putStrLn "| 5 | Volver al Menú Principal      |"
     putStrLn "+-----------------------------------+"
-    putStr "Seleccione una opción:"
+    putStr "Seleccione una opción: "
     hFlush stdout
 
--- Manejar Opciones Generales
 handleGenerales :: String -> IO ()
 handleGenerales option = case option of
     "1" -> do
         putStrLn "Opción: Gestión de Reserva"
-        -- Aquí va la lógica para gestionar reservas
         menuGenerales 
     "2" -> do
         putStrLn "Opción: Consultar Reserva"
-        -- Aquí va la lógica para consultar reservas
         menuGenerales
     "3" -> do
         putStrLn "Opción: Cancelar/Modificar Reserva"
-        -- Aquí va la lógica para cancelar o modificar reservas
         menuGenerales
     "4" -> do
         putStrLn "Opción: Consulta Disponibilidad Sala"
-        -- Aquí va la lógica para consultar disponibilidad
         menuGenerales
     "5" -> do
         putStrLn "Volviendo al Menú Principal..."
@@ -86,7 +114,6 @@ handleGenerales option = case option of
         putStrLn "+-------------------------------------+"
         menuGenerales
 
--- Menú de Opciones Generales
 menuGenerales :: IO ()
 menuGenerales = do
     showGenerales
@@ -102,14 +129,18 @@ showMenu = do
     putStrLn "| 2 | Opciones Generales        |"
     putStrLn "| 3 | Salir                     |"
     putStrLn "+-------------------------------+"
-    putStr "Seleccione una opción:"
+    putStr "Seleccione una opción: "
     hFlush stdout
 
 handleMenu :: String -> IO ()
 handleMenu option = case option of
     "1" -> do
-        putStrLn "Accediendo a Opciones Operativas..."
-        menuOperativas
+        usuarioValido <- validarUsuarioMenu
+        case usuarioValido of
+            Just usuario -> menuOperativas usuario
+            Nothing -> do
+                putStrLn "Error al validar el usuario. No se puede continuar."
+                mainMenu
     "2" -> do
         putStrLn "Accediendo a Opciones Generales..."
         menuGenerales
