@@ -40,6 +40,16 @@
   (major1) == 0 && (major2) <  12 || \
   (major1) == 0 && (major2) == 12 && (minor) <= 1)
 #endif /* MIN_VERSION_bytestring */
+/* package split-0.2.5 */
+#ifndef VERSION_split
+#define VERSION_split "0.2.5"
+#endif /* VERSION_split */
+#ifndef MIN_VERSION_split
+#define MIN_VERSION_split(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  2 || \
+  (major1) == 0 && (major2) == 2 && (minor) <= 5)
+#endif /* MIN_VERSION_split */
 
 /* tool gcc-14.0.6 */
 #ifndef TOOL_VERSION_gcc

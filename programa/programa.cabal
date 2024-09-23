@@ -69,6 +69,7 @@ executable programa
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.19.1.0,
                       aeson >=1.5,
+                      split >=0.2,
                       bytestring >=0.10
 
     -- Directories containing source files.

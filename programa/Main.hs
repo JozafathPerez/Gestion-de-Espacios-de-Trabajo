@@ -23,13 +23,12 @@ handleOperativas :: Usuario -> String -> IO ()
 handleOperativas usuario option = case option of
     "1" -> do
         putStrLn "Opción: Crear y Mostrar Mobiliario"
-        -- Pedir al usuario la ruta del archivo CSV
         putStrLn "Ingrese la ruta del archivo CSV de mobiliario: "
         hFlush stdout
         archivoCSV <- getLine
         let archivoBD = "mobiliario.json"  -- Archivo JSON para almacenar la base de datos de mobiliario
         cargarYMostrarMobiliario archivoCSV archivoBD
-        menuOperativas  -- Volver al menú operativas
+        menuOperativas usuario -- Volver al menú operativas
     "2" -> do
         putStrLn "Opción: Cargar y Mostrar Salas"
         -- Lógica para cargar y mostrar salas
