@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Mobiliario (cargarYMostrarMobiliario) where
+module Mobiliario (Mobiliario(..), leerMobiliario, cargarYMostrarMobiliario) where
 
 import System.IO (hFlush, stdout)
 import Data.List.Split (splitOn)

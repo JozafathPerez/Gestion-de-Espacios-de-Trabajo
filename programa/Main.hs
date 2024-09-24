@@ -1,6 +1,7 @@
 import System.IO (hFlush, stdout)
 import Utils (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
+import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
 import Data.Maybe (isNothing, fromJust)
 
 showOperativas :: Usuario -> IO ()
@@ -22,16 +23,16 @@ showOperativas usuario = do
 handleOperativas :: Usuario -> String -> IO ()
 handleOperativas usuario option = case option of
     "1" -> do
-        putStrLn "Opción: Crear y Mostrar Mobiliario"
         putStrLn "Ingrese la ruta del archivo CSV de mobiliario: "
         hFlush stdout
         archivoCSV <- getLine
-        let archivoBD = "mobiliario.json"  -- Archivo JSON para almacenar la base de datos de mobiliario
+        let archivoBD = "mobiliario.json"  
         cargarYMostrarMobiliario archivoCSV archivoBD
         menuOperativas usuario -- Volver al menú operativas
     "2" -> do
-        putStrLn "Opción: Cargar y Mostrar Salas"
-        -- Lógica para cargar y mostrar salas
+        let archivoBDMobiliario = "mobiliario.json"
+        let archivoBDSalas = "salas.json"
+        crearYMostrarSala archivoBDMobiliario archivoBDSalas
         menuOperativas usuario
     "3" -> do
         putStrLn "Opción: Informe de Reservas"
