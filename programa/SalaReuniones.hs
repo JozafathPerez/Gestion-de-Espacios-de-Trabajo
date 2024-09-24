@@ -6,8 +6,8 @@ import System.IO (hFlush, stdout)
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.Char8 as C
-import Data.List (find)
-import Data.Maybe (isNothing, fromJust)
+import Data.List (find, isPrefixOf)
+import Data.Maybe (isNothing, fromJust, mapMaybe)
 import Data.List.Split (splitOn)
 import Mobiliario (Mobiliario(..), leerMobiliario)
 import GHC.Generics (Generic)
@@ -17,13 +17,13 @@ data SalaReuniones = SalaReuniones
   { codigoSala :: String
   , nombreSala :: String
   , edificio   :: String
-  , piso       :: String  -- Cambié a String para mayor flexibilidad
+  , piso       :: String  
   , ubicacion  :: String
   , capacidad  :: Int
   , mobiliario :: [Mobiliario]
   } deriving (Show, Generic)
 
--- Instancias manuales de FromJSON y ToJSON
+-- Instancias de FromJSON y ToJSON
 instance FromJSON SalaReuniones
 instance ToJSON SalaReuniones
 
@@ -42,16 +42,24 @@ leerSalas path = do
 guardarSalas :: FilePath -> [SalaReuniones] -> IO ()
 guardarSalas path salas = B.writeFile path (encode salas)
 
--- Generar un código único para una nueva sala
-generarCodigoSala :: IO String
-generarCodigoSala = do
-    -- Por simplicidad, generamos un código basado en el tiempo actual
-    -- Esto puede mejorarse con lógica más avanzada
-    return "SALA_" -- Aquí se puede agregar un contador o timestamp
+-- Generar un código único para una nueva sala basado en los códigos existentes
+generarCodigoSala :: [SalaReuniones] -> String
+generarCodigoSala salas =
+    let codigosExistentes = map codigoSala salas
+        numeros = mapMaybe (leerNumeroCodigo "SALA_") codigosExistentes
+        nuevoNumero = if null numeros then 1 else maximum numeros + 1
+    in "SALA_" ++ show nuevoNumero
+
+-- Función auxiliar para extraer el número de un código de sala
+leerNumeroCodigo :: String -> String -> Maybe Int
+leerNumeroCodigo prefijo codigo =
+    if prefijo `isPrefixOf` codigo
+    then Just (read (drop (length prefijo) codigo) :: Int)
+    else Nothing
 
 -- Crear una nueva sala de reuniones
-crearSala :: [Mobiliario] -> IO SalaReuniones
-crearSala mobiliarioExistente = do
+crearSala :: [SalaReuniones] -> [Mobiliario] -> IO SalaReuniones
+crearSala salasExistentes mobiliarioExistente = do
     -- Pedir al usuario la información básica de la sala
     putStr "Ingrese el nombre de la sala: "
     hFlush stdout
@@ -84,7 +92,7 @@ crearSala mobiliarioExistente = do
     let mobiliarioSeleccionado = [mobiliarioExistente !! (i - 1) | i <- indicesSeleccionados]
 
     -- Generar código de sala
-    codigo <- generarCodigoSala
+    let codigo = generarCodigoSala salasExistentes
 
     -- Devolver la nueva sala creada
     return SalaReuniones {
@@ -113,21 +121,21 @@ crearYMostrarSala archivoMobiliario archivoSalas = do
     -- Leer mobiliario disponible
     mobiliario <- leerMobiliario archivoMobiliario
 
-    -- Crear la sala de reuniones
-    salaNueva <- crearSala mobiliario
-
     -- Leer las salas existentes desde la base de datos
     salasExistentes <- leerSalas archivoSalas
 
     case salasExistentes of
-        Left _ -> guardarSalas archivoSalas [salaNueva]
+        Left _ -> do
+            salaNueva <- crearSala [] mobiliario
+            guardarSalas archivoSalas [salaNueva]
+            putStrLn "Sala de reuniones creada con éxito!"
+            mostrarSala salaNueva
         Right salas -> do
+            salaNueva <- crearSala salas mobiliario
             let salasActualizadas = salas ++ [salaNueva]
             guardarSalas archivoSalas salasActualizadas
-
-    -- Mostrar información de la sala creada
-    putStrLn "Sala de reuniones creada con éxito!"
-    mostrarSala salaNueva
+            putStrLn "Sala de reuniones creada con éxito!"
+            mostrarSala salaNueva
 
 -- Mostrar información de una sala
 mostrarSala :: SalaReuniones -> IO ()

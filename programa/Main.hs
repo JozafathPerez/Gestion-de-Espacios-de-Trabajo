@@ -12,13 +12,37 @@ showOperativas usuario = do
     putStrLn "+-------------------------------------+"
     putStrLn "|        OPCIONES OPERATIVAS          |"
     putStrLn "+-------------------------------------+"
-    putStrLn "| 1 | Crear y Mostrar Mobiliario      |"
-    putStrLn "| 2 | Cargar y Mostrar Salas          |"
+    putStrLn "| 1 | Cargar y Mostrar Mobiliario     |"
+    putStrLn "| 2 | Crear y Mostrar Salas           |"
     putStrLn "| 3 | Informe de Reservas             |"
     putStrLn "| 4 | Volver al Menú Principal        |"
     putStrLn "+-------------------------------------+"
     putStr "Seleccione una opción: "
     hFlush stdout
+
+menuSalasR :: FilePath -> FilePath -> IO ()
+menuSalasR archivoMobiliario archivoSalas = do
+    putStrLn "\n+--------------------------------------+"
+    putStrLn "|      Menú de Salas de Reunión          |"
+    putStrLn "+----------------------------------------+"
+    putStrLn "| 1 | Crear una nueva sala de reunión    |"
+    putStrLn "| 2 | Ver una sala de reunión por código |"
+    putStrLn "| 0 | Salir al menu operativas.          |"
+    putStrLn "+----------------------------------------+"
+    putStr "Seleccione una opción: "
+    hFlush stdout
+    opcion <- getLine
+    case opcion of
+        "1" -> crearYMostrarSala archivoMobiliario archivoSalas >> menuSalasR archivoMobiliario archivoSalas
+        "2" -> do
+            putStr "Ingrese el código de la sala: "
+            hFlush stdout
+            codigo <- getLine
+            mostrarSalaPorCodigo archivoSalas codigo
+            menuSalasR archivoMobiliario archivoSalas
+        "0" -> putStrLn "Saliendo del sistema."
+        _   -> putStrLn "Opción no válida." >> menuSalasR archivoMobiliario archivoSalas
+
 
 handleOperativas :: Usuario -> String -> IO ()
 handleOperativas usuario option = case option of
@@ -32,7 +56,7 @@ handleOperativas usuario option = case option of
     "2" -> do
         let archivoBDMobiliario = "mobiliario.json"
         let archivoBDSalas = "salas.json"
-        crearYMostrarSala archivoBDMobiliario archivoBDSalas
+        menuSalasR archivoBDMobiliario archivoBDSalas
         menuOperativas usuario
     "3" -> do
         putStrLn "Opción: Informe de Reservas"
