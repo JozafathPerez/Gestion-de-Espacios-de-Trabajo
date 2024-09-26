@@ -1,5 +1,5 @@
 import System.IO (hFlush, stdout)
-import Utils (leerUsuarios, validarUsuario, Usuario(..))
+import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
 import Data.Maybe (isNothing, fromJust)
