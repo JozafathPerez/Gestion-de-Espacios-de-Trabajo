@@ -2,7 +2,7 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
-import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo)
+import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva)
 import Data.Maybe (isNothing, fromJust)
 
 showOperativas :: Usuario -> IO ()
@@ -102,6 +102,32 @@ menuOperativas usuario = do
     option <- getLine
     handleOperativas usuario option
 
+subMenuGenerales  :: FilePath -> IO ()
+subMenuGenerales archivoReservas = do
+    putStrLn "\n+--------------------------------------+"
+    putStrLn "|     Menú de Edición de Reservas        |"
+    putStrLn "+----------------------------------------+"
+    putStrLn "| 1 | Cancelación de reserva.            |"
+    putStrLn "| 2 | Modificación de reserva.           |"
+    putStrLn "| 0 | Salir al menu Generales.           |"
+    putStrLn "+----------------------------------------+"
+    putStr "Seleccione una opción: "
+    hFlush stdout
+    opcion <- getLine
+    case opcion of
+        "1" -> do
+            putStr "Ingrese el código de la reserva a cancelar: "
+            hFlush stdout
+            codigo <- getLine
+            eliminarReserva archivoReservas codigo
+            subMenuGenerales archivoReservas
+
+        "2" -> do
+            putStrLn "Modificación de reserva: "
+            subMenuGenerales archivoReservas
+        "0" -> putStrLn "Saliendo del sistema."
+        _   -> putStrLn "Opción no válida." >> subMenuGenerales archivoReservas
+
 showGenerales :: IO ()
 showGenerales = do
     putStrLn "+-----------------------------------+"
@@ -145,7 +171,7 @@ handleGenerales option = case option of
 
         menuGenerales
     "3" -> do
-        putStrLn "Opción: Cancelar/Modificar Reserva"
+        subMenuGenerales "reservas.json"
         menuGenerales
     "4" -> do
         putStrLn "Opción: Consulta Disponibilidad Sala"

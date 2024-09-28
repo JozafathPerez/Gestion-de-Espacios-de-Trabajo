@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, Reserva) where
+module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, Reserva) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
@@ -196,6 +196,22 @@ crearReserva reservasExistentes = do
                 cantPersonas = cantidadPersonas
             }
 
+-- Función para eliminar una reserva por su código
+eliminarReserva :: FilePath -> String -> IO ()
+eliminarReserva archivoReservas codigoBuscado = do
+    -- Leer las reservas desde el archivo
+    resultado <- leerReservas archivoReservas
+    case resultado of
+        Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+        Right reservas -> do
+            -- Buscar la reserva con el código especificado
+            let reservasFiltradas = filter (\r -> codigoReserva r /= codigoBuscado) reservas
+            if length reservasFiltradas < length reservas
+                then do
+                    -- Sobrescribir el archivo con las reservas filtradas
+                    guardarReservas archivoReservas reservasFiltradas
+                    putStrLn "Reserva eliminada con éxito."
+                else putStrLn "No se encontró ninguna reserva con ese código."
     
 
 
