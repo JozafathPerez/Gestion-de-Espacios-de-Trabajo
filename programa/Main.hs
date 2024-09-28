@@ -2,7 +2,7 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
-import Reservas (leerReservas, imprimirCodigosReservas, crearReserva, agregarReserva)
+import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo)
 import Data.Maybe (isNothing, fromJust)
 
 showOperativas :: Usuario -> IO ()
@@ -137,6 +137,12 @@ handleGenerales option = case option of
         menuGenerales 
     "2" -> do
         putStrLn "Opción: Consultar Reserva"
+        -- Leer las reservas existentes
+        putStr "Ingrese el codigo de reserva:"
+        hFlush stdout
+        codigo <- getLine
+        buscarReservaPorCodigo "reservas.json" codigo
+
         menuGenerales
     "3" -> do
         putStrLn "Opción: Cancelar/Modificar Reserva"

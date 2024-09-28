@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas,imprimirCodigosReservas, crearReserva, agregarReserva, Reserva) where
+module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, Reserva) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
@@ -58,11 +58,31 @@ agregarReserva archivo reservaNueva = do
             guardarReservas archivo reservasActualizadas
             putStrLn "Reserva guardada correctamente."
 
--- Función para imprimir todos los códigos de reserva
-imprimirCodigosReservas :: [Reserva] -> IO ()
-imprimirCodigosReservas reservas = do
-    putStrLn "Códigos de reserva:"
-    mapM_ (putStrLn . codigoReserva) reservas
+-- Funcion para imprimir una reserva
+mostrarReserva :: Reserva -> IO ()
+mostrarReserva reserva = do
+    putStrLn "+-------------------------------------+"
+    putStrLn "|       Información de Reserva        |"
+    putStrLn "+-------------------------------------+"
+    putStrLn $ "Código de reserva: " ++ codigoReserva reserva
+    putStrLn $ "Código de sala: " ++ codigoSalaR reserva
+    putStrLn $ "Código de usuario: " ++ codigoUsuario reserva
+    putStrLn $ "Fecha de reserva: " ++ show (fecha reserva)
+    putStrLn $ "Cantidad de personas: " ++ show (cantPersonas reserva)
+
+-- Función para buscar una reserva por su código
+buscarReservaPorCodigo :: FilePath -> String -> IO ()
+buscarReservaPorCodigo archivoReservas codigoBuscado = do
+    -- Leer las reservas desde el archivo
+    resultado <- leerReservas archivoReservas
+    case resultado of
+        Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+        Right reservas -> do
+            -- Buscar la reserva con el código especificado
+            let reservaEncontrada = find (\r -> codigoReserva r == codigoBuscado) reservas
+            case reservaEncontrada of
+                Just reserva -> mostrarReserva reserva  
+                Nothing -> putStrLn "No se encontró ninguna reserva con ese código."  
 
 -- Generar codigo de reserva
 generarCodigoReserva :: [Reserva] -> String
