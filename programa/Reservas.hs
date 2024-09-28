@@ -75,8 +75,22 @@ pedirCodigoSala archivoSalas = do
             pedirCodigoSala archivoSalas -- Volver a pedir el código si no se encuentra la sala
 
 -- Función auxiliar para validar el código de un usuario
--- pedirCodigoUsuario :: FilePath -> IO String
--- pedirCod
+pedirCodigoUsuario :: IO String
+pedirCodigoUsuario = do
+    usuarios <- leerUsuarios "usuarios.json"
+    case usuarios of
+        Left err -> do
+            putStrLn ("Error al leer el archivo de usuarios: " ++ err)
+            return ""
+        Right usuariosList -> do
+            putStr "Ingrese el código del usuario: "
+            hFlush stdout
+            codigo <- getLine
+            if isNothing (validarUsuario codigo usuariosList)
+                then do
+                    putStrLn "Usuario no encontrado. Por favor, ingrese un código válido."
+                    pedirCodigoUsuario  -- Volver a pedir el código si no se encuentra el usuario
+                else return codigo
 
 -- Función auxiliar para validar una fecha ingresada por el usuario
 pedirFecha :: IO Day
@@ -124,9 +138,8 @@ crearReserva reservasExistentes = do
     sala <- pedirCodigoSala "salas.json"
     let codigoS = codigoSala sala
 
-    putStr "Ingrese el código del usuario: "
-    hFlush stdout
-    codigoU <- getLine
+    -- Pedir y validar el código del usuario
+    codigoU <- pedirCodigoUsuario
 
     -- Pedir y validar la fecha
     fechaValida <- pedirFecha
