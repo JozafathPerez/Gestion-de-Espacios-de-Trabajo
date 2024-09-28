@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo, SalaReuniones) where
+module SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo, salaPorCodigo,leerSalas, SalaReuniones(..)) where
 
 import System.IO (hFlush, stdout)
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
@@ -167,3 +167,15 @@ mostrarSalaPorCodigo archivoSalas codigo = do
             case salaEncontrada of
                 Just sala -> mostrarSala sala
                 Nothing -> putStrLn "Sala no encontrada."
+
+-- Buscar y devolver una sala por código
+salaPorCodigo :: FilePath -> String -> IO (Maybe SalaReuniones)
+salaPorCodigo archivoSalas codigo = do
+    salas <- leerSalas archivoSalas
+    case salas of
+        Left err -> do
+            putStrLn ("Error al leer las salas: " ++ err)
+            return Nothing
+        Right salasList -> do
+            let salaEncontrada = find (\s -> codigoSala s == codigo) salasList
+            return salaEncontrada
