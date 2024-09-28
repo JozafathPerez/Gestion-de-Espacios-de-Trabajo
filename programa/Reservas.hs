@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas,imprimirCodigosReservas, crearReserva, Reserva) where
+module Reservas (leerReservas,imprimirCodigosReservas, crearReserva, agregarReserva, Reserva) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
@@ -40,16 +40,29 @@ leerReservas path = do
             return (Left err)
         Right reservasList -> return (Right reservasList)
 
+-- Función para guardar reservas en un archivo JSON
+guardarReservas :: FilePath -> [Reserva] -> IO ()
+guardarReservas path reservas = B.writeFile path (encode reservas)
+
+--Funcion para agregar reserva
+agregarReserva :: FilePath -> Reserva -> IO ()
+agregarReserva archivo reservaNueva = do
+    -- Leer reservas existentes
+    resultado <- leerReservas archivo
+    case resultado of
+        Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+        Right reservasExistentes -> do
+            -- Agregar la nueva reserva a la lista
+            let reservasActualizadas = reservaNueva : reservasExistentes
+            -- Guardar la lista actualizada de reservas en el archivo
+            guardarReservas archivo reservasActualizadas
+            putStrLn "Reserva guardada correctamente."
+
 -- Función para imprimir todos los códigos de reserva
 imprimirCodigosReservas :: [Reserva] -> IO ()
 imprimirCodigosReservas reservas = do
     putStrLn "Códigos de reserva:"
     mapM_ (putStrLn . codigoReserva) reservas
-
--- Función para guardar reservas en un archivo JSON
-guardarReservas :: FilePath -> [Reserva] -> IO ()
-guardarReservas path reservas = B.writeFile path (encode reservas)
-
 
 -- Generar codigo de reserva
 generarCodigoReserva :: [Reserva] -> String
@@ -106,12 +119,9 @@ pedirFecha = do
             pedirFecha -- Volver a pedir la fecha hasta que sea válida
 
 -- Función para verificar si ya existe una reserva con el mismo código de sala y fecha
-
 existeReserva :: [Reserva] -> String -> Day -> Bool
 existeReserva reservas codigoSala fechaBuscada = 
     any (\r -> codigoSalaR r == codigoSala && fecha r == fechaBuscada) reservas
-
-
 
 -- Función para pedir la cantidad de personas y validarla
 pedirCantPersonas :: Int -> IO Int
@@ -132,6 +142,7 @@ pedirCantPersonas capacidad = do
             putStrLn "Entrada inválida. Por favor, ingrese un número entero."
             pedirCantPersonas capacidad  -- Volver a pedir la cantidad si la entrada no es un número
 
+-- Crear reserva
 crearReserva :: [Reserva] -> IO Reserva
 crearReserva reservasExistentes = do
     -- Pedir y validar el código de la sala
@@ -167,7 +178,7 @@ crearReserva reservasExistentes = do
 
     
 
--- Crear reserva
+
 
 
 

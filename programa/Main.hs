@@ -2,7 +2,7 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
-import Reservas (leerReservas, imprimirCodigosReservas, crearReserva)
+import Reservas (leerReservas, imprimirCodigosReservas, crearReserva, agregarReserva)
 import Data.Maybe (isNothing, fromJust)
 
 showOperativas :: Usuario -> IO ()
@@ -119,9 +119,7 @@ showGenerales = do
 handleGenerales :: String -> IO ()
 handleGenerales option = case option of
     "1" -> do
-        putStrLn "Opción: Gestión de Reserva xd"
-        let archivoSalas = "salas.json"
-        let archivoReservas = "reservas.json"
+        putStrLn "Opción: Gestión de Reserva"
         -- Leer las reservas existentes
         reservasResult <- leerReservas "reservas.json"
         
@@ -133,6 +131,8 @@ handleGenerales option = case option of
                 -- Crear una nueva reserva
                 nuevaReserva <- crearReserva reservasExistentes
                 putStrLn ("Reserva creada: " ++ show nuevaReserva)
+                -- Agregar la nueva reserva a la lista
+                agregarReserva "reservas.json" nuevaReserva
 
         menuGenerales 
     "2" -> do
