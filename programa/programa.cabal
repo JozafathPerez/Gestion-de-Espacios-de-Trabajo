@@ -70,7 +70,8 @@ executable programa
     build-depends:    base ^>=4.19.1.0,
                       aeson >=1.5,
                       split >=0.2,
-                      bytestring >=0.10
+                      bytestring >=0.10,
+                      time >=1.9,
 
     -- Directories containing source files.
     hs-source-dirs:   .

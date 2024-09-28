@@ -2,6 +2,7 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
+import Reservas (leerReservas, imprimirCodigosReservas, crearReserva)
 import Data.Maybe (isNothing, fromJust)
 
 showOperativas :: Usuario -> IO ()
@@ -118,7 +119,21 @@ showGenerales = do
 handleGenerales :: String -> IO ()
 handleGenerales option = case option of
     "1" -> do
-        putStrLn "Opción: Gestión de Reserva"
+        putStrLn "Opción: Gestión de Reserva xd"
+        let archivoSalas = "salas.json"
+        let archivoReservas = "reservas.json"
+        -- Leer las reservas existentes
+        reservasResult <- leerReservas "reservas.json"
+        
+        case reservasResult of
+            Left err -> do
+                putStrLn ("Error al leer las reservas: " ++ err)
+                return ()  -- Manejo de error
+            Right reservasExistentes -> do
+                -- Crear una nueva reserva
+                nuevaReserva <- crearReserva reservasExistentes
+                putStrLn ("Reserva creada: " ++ show nuevaReserva)
+
         menuGenerales 
     "2" -> do
         putStrLn "Opción: Consultar Reserva"
@@ -153,7 +168,7 @@ showMenu = do
     putStrLn "| 2 | Opciones Generales        |"
     putStrLn "| 3 | Salir                     |"
     putStrLn "+-------------------------------+"
-    putStr "Seleccione una opción: "
+    putStr "Seleccione una opción:  "
     hFlush stdout
 
 handleMenu :: String -> IO ()
