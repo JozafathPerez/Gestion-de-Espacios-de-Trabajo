@@ -2,7 +2,7 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
-import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango)
+import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, mostrarTodasLasReservas, mostrarEstadisticas)
 import Data.Maybe (isNothing, fromJust)
 
 
@@ -45,6 +45,31 @@ menuSalasR archivoMobiliario archivoSalas = do
         "0" -> putStrLn "Saliendo del sistema."
         _   -> putStrLn "Opción no válida." >> menuSalasR archivoMobiliario archivoSalas
 
+subMenuInforme  :: IO ()
+subMenuInforme  = do
+    putStrLn "\n+--------------------------------------+"
+    putStrLn "|            Menú de Informes            |"
+    putStrLn "+----------------------------------------+"
+    putStrLn "| 1 | Informe reservas.                  |"
+    putStrLn "| 2 | Estadisticas.                      |"
+    putStrLn "| 0 | Salir al menu Operativas.          |"
+    putStrLn "+----------------------------------------+"
+    putStr "Seleccione una opción: "
+    hFlush stdout
+    opcion <- getLine
+    case opcion of
+        "1" -> do
+            mostrarTodasLasReservas
+            subMenuInforme 
+
+        "2" -> do
+            resultado <- leerReservas "reservas.json"
+            case resultado of
+                Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+                Right reservas -> mostrarEstadisticas reservas
+            subMenuInforme 
+        "0" -> putStrLn "Saliendo del sistema."
+        _   -> putStrLn "Opción no válida." >> subMenuInforme
 
 handleOperativas :: Usuario -> String -> IO ()
 handleOperativas usuario option = case option of
@@ -61,8 +86,7 @@ handleOperativas usuario option = case option of
         menuSalasR archivoBDMobiliario archivoBDSalas
         menuOperativas usuario
     "3" -> do
-        putStrLn "Opción: Informe de Reservas"
-        -- Lógica para mostrar informe de reservas
+        subMenuInforme
         menuOperativas usuario
     "4" -> do
         putStrLn "Volviendo al Menú Principal..."

@@ -1,13 +1,14 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, Reserva) where
+module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, mostrarTodasLasReservas, mostrarEstadisticas, Reserva) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.Char8 as C
-import Data.List (find, isPrefixOf)
+import Data.List (find, isPrefixOf, groupBy, sortOn, maximumBy)
+import Data.Ord (comparing)
 import Data.Maybe (isNothing, fromJust, mapMaybe)
 import Data.List.Split (splitOn)
 import GHC.Generics (Generic)
@@ -15,6 +16,7 @@ import Data.Time (Day, parseTimeM, defaultTimeLocale)
 
 import SalaReuniones (salaPorCodigo, leerNumeroCodigo, mostrarSala, SalaReuniones(..), leerSalas)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
+
 
 --Definición de reserva
 data Reserva = Reserva
@@ -414,3 +416,84 @@ mostrarEstadoSala :: Day -> [Reserva] -> SalaReuniones -> IO ()
 mostrarEstadoSala fecha reservas sala = do
     let estaReservada = existeReserva reservas (codigoSala sala) fecha
     putStrLn $ "Sala: " ++ codigoSala sala ++ " - "  ++  if estaReservada then "Reservada" else "Disponible"
+
+-- Apartado de Funciones operativas
+
+-- Función para buscar una sala por su código
+salaPorCodigoReporte :: [SalaReuniones] -> String -> Maybe SalaReuniones
+salaPorCodigoReporte salas codigo = find (\s -> codigoSala s == codigo) salas
+
+-- Mostrar información detallada de una reserva y su sala asociada
+mostrarReservaConSala :: Reserva -> [SalaReuniones] -> IO ()
+mostrarReservaConSala reserva salas = do
+    let maybeSala = salaPorCodigoReporte salas (codigoSalaR reserva)
+    case maybeSala of
+        Just sala -> do
+            putStrLn "+-------------------------------------+"
+            putStrLn "|          Información de Reserva      |"
+            putStrLn "+-------------------------------------+"
+            putStrLn $ "Código de Reserva: " ++ codigoReserva reserva
+            putStrLn $ "Código de Sala: " ++ codigoSalaR reserva
+            putStrLn $ "Código de Usuario: " ++ codigoUsuario reserva
+            putStrLn $ "Fecha de la Reserva: " ++ show (fecha reserva)
+            putStrLn $ "Cantidad de Personas: " ++ show (cantPersonas reserva)
+            putStrLn ""
+            putStrLn "+-------------------------------------+"
+            putStrLn "|          Información de Sala         |"
+            putStrLn "+-------------------------------------+"
+            putStrLn $ "Nombre: " ++ nombreSala sala
+            putStrLn $ "Edificio: " ++ edificio sala
+            putStrLn $ "Piso: " ++ piso sala
+            putStrLn $ "Ubicación: " ++ ubicacion sala
+            putStrLn $ "Capacidad: " ++ show (capacidad sala)
+            putStrLn "+-------------------------------------+"
+        Nothing -> putStrLn "No se encontró la sala asociada a la reserva."
+
+-- Mostrar todas las reservas con la información de las salas asociadas
+mostrarTodasLasReservas :: IO ()
+mostrarTodasLasReservas = do
+    -- Leer las reservas desde el archivo
+    resultadoReservas <- leerReservas "reservas.json"
+    case resultadoReservas of
+        Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+        Right reservas -> do
+            -- Leer las salas desde el archivo
+            resultadoSalas <- leerSalas "salas.json"
+            case resultadoSalas of
+                Left err -> putStrLn ("Error al leer las salas: " ++ err)
+                Right salas -> do
+                    -- Mostrar la información de cada reserva con su sala asociada
+                    mapM_ (\reserva -> mostrarReservaConSala reserva salas) reservas
+
+-- Función para obtener la sala más utilizada
+salaMasUtilizada :: [Reserva] -> String
+salaMasUtilizada reservas =
+    let salas = map codigoSalaR reservas
+        agrupadas = groupBy (==) (sortOn id salas)
+        masFrecuente = maximumBy (comparing length) agrupadas
+    in head masFrecuente
+
+-- Funcion para obtener usuario con ma reservas
+usuarioMasReservas :: [Reserva] -> String
+usuarioMasReservas reservas =
+    let usuarios = map codigoUsuario reservas
+        agrupadas = groupBy (==) (sortOn id usuarios)
+        masFrecuente = maximumBy (comparing length) agrupadas
+    in head masFrecuente
+
+-- Funcion para obtener el día con mas reservas
+diaConMasReservas :: [Reserva] -> Day
+diaConMasReservas reservas =
+    let fechas = map fecha reservas
+        agrupadas = groupBy (==) (sortOn id fechas)
+        masFrecuente = maximumBy (comparing length) agrupadas
+    in head masFrecuente
+
+mostrarEstadisticas :: [Reserva] -> IO ()
+mostrarEstadisticas reservas = do
+    let salaFrecuente = salaMasUtilizada reservas
+        usuarioFrecuente = usuarioMasReservas reservas
+        diaFrecuente = diaConMasReservas reservas
+    putStrLn $ "Sala más utilizada: " ++ salaFrecuente
+    putStrLn $ "Usuario con mayor número de reservas: " ++ usuarioFrecuente
+    putStrLn $ "Día con mayor cantidad de reservas: " ++ show diaFrecuente
