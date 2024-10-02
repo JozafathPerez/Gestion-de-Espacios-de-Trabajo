@@ -2,7 +2,7 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
-import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva)
+import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva, editarReserva)
 import Data.Maybe (isNothing, fromJust)
 
 showOperativas :: Usuario -> IO ()
@@ -123,7 +123,10 @@ subMenuGenerales archivoReservas = do
             subMenuGenerales archivoReservas
 
         "2" -> do
-            putStrLn "Modificación de reserva: "
+            putStrLn "Ingrese el código de la reserva a editar: "
+            hFlush stdout
+            codigo <- getLine
+            editarReserva "reservas.json" codigo
             subMenuGenerales archivoReservas
         "0" -> putStrLn "Saliendo del sistema."
         _   -> putStrLn "Opción no válida." >> subMenuGenerales archivoReservas
@@ -194,7 +197,7 @@ menuGenerales = do
 showMenu :: IO ()
 showMenu = do
     putStrLn "+-------------------------------+"
-    putStrLn "|      GESTIÓN DE SALAS         |"
+    putStrLn "|      GESTIÓN DE SALAS   xd      |"
     putStrLn "+-------------------------------+"
     putStrLn "| 1 | Opciones Operativas       |"
     putStrLn "| 2 | Opciones Generales        |"

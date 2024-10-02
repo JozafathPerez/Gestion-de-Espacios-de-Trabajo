@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, Reserva) where
+module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva,Reserva) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
@@ -212,7 +212,77 @@ eliminarReserva archivoReservas codigoBuscado = do
                     guardarReservas archivoReservas reservasFiltradas
                     putStrLn "Reserva eliminada con éxito."
                 else putStrLn "No se encontró ninguna reserva con ese código."
-    
+
+
+-- Función para editar una reserva por su código
+editarReserva :: FilePath -> String -> IO ()
+editarReserva archivoReservas codigoBuscado = do
+    -- Leer las reservas desde el archivo
+    resultado <- leerReservas archivoReservas
+    case resultado of
+        Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+        Right reservas -> do
+            -- Buscar la reserva con el código especificado
+            let reservaEncontrada = find (\r -> codigoReserva r == codigoBuscado) reservas
+            case reservaEncontrada of
+                Just reserva -> do
+                    putStrLn "Reserva encontrada. Ingrese los nuevos datos:"
+                    -- Pedir los nuevos valores
+                    nuevaReserva <- actualizarDatosReserva reserva
+                    -- Actualizar la lista de reservas
+                    let reservasActualizadas = map (\r -> if codigoReserva r == codigoBuscado then nuevaReserva else r) reservas
+                    -- Guardar las reservas actualizadas en el archivo
+                    guardarReservas archivoReservas reservasActualizadas
+                    putStrLn "Reserva actualizada con éxito."
+                Nothing -> putStrLn "No se encontró ninguna reserva con ese código."
+
+-- Función para actualizar los datos de la reserva
+actualizarDatosReserva :: Reserva -> IO Reserva
+actualizarDatosReserva reserva = do
+    -- Pedir los nuevos valores para cada campo
+    putStrLn "Ingrese el nuevo código de la sala (o deje en blanco para mantener el actual): "
+    hFlush stdout
+    nuevoCodigoSala <- getLine
+
+    -- putStrLn "Ingrese el nuevo código del usuario (o deje en blanco para mantener el actual): "
+    -- hFlush stdout
+    -- nuevoCodigoUsuario <- getLine
+
+    putStrLn "Ingrese la nueva fecha de la reserva (dd/mm/yyyy) (o deje en blanco para mantener la actual): "
+    hFlush stdout
+    nuevaFechaStr <- getLine
+
+    nuevaFecha <- if null nuevaFechaStr
+        then return (fecha reserva)
+        else pedirFechaDesdeCadena nuevaFechaStr
+
+    putStrLn "Ingrese la nueva cantidad de personas (o deje en blanco para mantener la actual): "
+    hFlush stdout
+    nuevaCantidadPersonasStr <- getLine
+    let nuevaCantidadPersonas = if null nuevaCantidadPersonasStr
+                                then cantPersonas reserva
+                                else read nuevaCantidadPersonasStr
+
+    -- Crear la nueva reserva con los datos actualizados o los datos originales
+    return Reserva {
+        codigoReserva = codigoReserva reserva, -- Se mantiene el mismo código de reserva
+        codigoSalaR = if null nuevoCodigoSala then codigoSalaR reserva else nuevoCodigoSala,
+        codigoUsuario = codigoUsuario reserva, -- Se mantiene el mismo usuario
+        fecha = nuevaFecha,
+        cantPersonas = nuevaCantidadPersonas
+    }
+
+-- Función para convertir una fecha desde cadena
+pedirFechaDesdeCadena :: String -> IO Day
+pedirFechaDesdeCadena fechaStr = do
+    let formato = "%d/%m/%Y"
+    case parseTimeM True defaultTimeLocale formato fechaStr of
+        Just fechaValida -> return fechaValida
+        Nothing -> do
+            putStrLn "Fecha inválida. Por favor, ingrese una fecha válida."
+            nuevaFechaStr <- getLine
+            pedirFechaDesdeCadena nuevaFechaStr
+
 
 
 
