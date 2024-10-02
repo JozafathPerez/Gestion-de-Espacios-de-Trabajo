@@ -2,8 +2,10 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
-import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva, editarReserva)
+import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva, editarReserva, validarDatosEdicion)
 import Data.Maybe (isNothing, fromJust)
+
+import Data.Time (Day, parseTimeM, defaultTimeLocale, fromGregorian)
 
 showOperativas :: Usuario -> IO ()
 showOperativas usuario = do
@@ -177,7 +179,9 @@ handleGenerales option = case option of
         subMenuGenerales "reservas.json"
         menuGenerales
     "4" -> do
+        -- Probar con un código de sala existente, una fecha y cantidad de personas válida
         putStrLn "Opción: Consulta Disponibilidad Sala"
+        
         menuGenerales
     "5" -> do
         putStrLn "Volviendo al Menú Principal..."
@@ -197,7 +201,7 @@ menuGenerales = do
 showMenu :: IO ()
 showMenu = do
     putStrLn "+-------------------------------+"
-    putStrLn "|      GESTIÓN DE SALAS   xd      |"
+    putStrLn "|      GESTIÓN DE SALAS    cd     |"
     putStrLn "+-------------------------------+"
     putStrLn "| 1 | Opciones Operativas       |"
     putStrLn "| 2 | Opciones Generales        |"

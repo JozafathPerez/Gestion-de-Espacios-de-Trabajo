@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva,Reserva) where
+module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva, validarDatosEdicion,Reserva) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
@@ -11,7 +11,6 @@ import Data.List (find, isPrefixOf)
 import Data.Maybe (isNothing, fromJust, mapMaybe)
 import Data.List.Split (splitOn)
 import GHC.Generics (Generic)
-import Data.Time (Day, parseTimeM, defaultTimeLocale)
 
 import SalaReuniones (salaPorCodigo, leerNumeroCodigo, SalaReuniones(..))
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
@@ -227,14 +226,27 @@ editarReserva archivoReservas codigoBuscado = do
             case reservaEncontrada of
                 Just reserva -> do
                     putStrLn "Reserva encontrada. Ingrese los nuevos datos:"
-                    -- Pedir los nuevos valores
+                    
+                    -- Pedir los nuevos valores para la reserva
                     nuevaReserva <- actualizarDatosReserva reserva
-                    -- Actualizar la lista de reservas
-                    let reservasActualizadas = map (\r -> if codigoReserva r == codigoBuscado then nuevaReserva else r) reservas
-                    -- Guardar las reservas actualizadas en el archivo
-                    guardarReservas archivoReservas reservasActualizadas
-                    putStrLn "Reserva actualizada con éxito."
+                    
+                    -- Validar los nuevos datos de la reserva
+                    let nuevoCodigoSala = codigoSalaR nuevaReserva
+                    let nuevaFecha = fecha nuevaReserva
+                    let nuevaCantidadPersonas = cantPersonas nuevaReserva
+                    
+                    -- Realizar las validaciones antes de proceder
+                    validacionExitosa <- validarDatosEdicion nuevoCodigoSala nuevaFecha nuevaCantidadPersonas (fecha reserva)
+                    if not validacionExitosa
+                        then putStrLn "No se puede proceder con la edición debido a errores en la validación."
+                        else do
+                            -- Actualizar la lista de reservas con los nuevos datos
+                            let reservasActualizadas = map (\r -> if codigoReserva r == codigoBuscado then nuevaReserva else r) reservas
+                            -- Guardar las reservas actualizadas en el archivo
+                            guardarReservas archivoReservas reservasActualizadas
+                            putStrLn "Reserva actualizada con éxito."
                 Nothing -> putStrLn "No se encontró ninguna reserva con ese código."
+
 
 -- Función para actualizar los datos de la reserva
 actualizarDatosReserva :: Reserva -> IO Reserva
@@ -243,11 +255,7 @@ actualizarDatosReserva reserva = do
     putStrLn "Ingrese el nuevo código de la sala (o deje en blanco para mantener el actual): "
     hFlush stdout
     nuevoCodigoSala <- getLine
-
-    -- putStrLn "Ingrese el nuevo código del usuario (o deje en blanco para mantener el actual): "
-    -- hFlush stdout
-    -- nuevoCodigoUsuario <- getLine
-
+    -- Pedri la nueva fecha
     putStrLn "Ingrese la nueva fecha de la reserva (dd/mm/yyyy) (o deje en blanco para mantener la actual): "
     hFlush stdout
     nuevaFechaStr <- getLine
@@ -272,7 +280,39 @@ actualizarDatosReserva reserva = do
         cantPersonas = nuevaCantidadPersonas
     }
 
--- Función para convertir una fecha desde cadena
+-- Función para validar si los datos de edición son correctos
+validarDatosEdicion :: String -> Day -> Int -> Day -> IO Bool
+validarDatosEdicion codiSala nuevaFecha cantPersonas fechaOriginal = do
+    -- Leer reservas
+    reservas <- leerReservas "reservas.json"
+    -- Verificar si se pudo leer el archivo
+    case reservas of
+        Left err -> do
+            putStrLn ("Error al leer las reservas: " ++ err)
+            return False  -- Manejo de error
+        -- Si se leyó correctamente
+        Right reservasExistentes -> do
+            -- Verificar si la sala existe
+            sala <- salaPorCodigo "salas.json" codiSala
+            case sala of
+                Just salaValida -> do
+                    -- Solo validar la fecha si es diferente a la original
+                    if nuevaFecha /= fechaOriginal && existeReserva reservasExistentes codiSala nuevaFecha
+                        then do
+                            putStrLn "La fecha no está disponible para la sala seleccionada. Por favor, elija otra fecha."
+                            return False
+                        else do
+                            if cantPersonas > capacidad salaValida
+                                then do
+                                    putStrLn "La cantidad de personas no puede exceder la capacidad de la sala."
+                                    return False
+                                else return True
+                Nothing -> do
+                    putStrLn "Sala no encontrada. Por favor, ingrese un código válido."
+                    return False
+
+
+-- Variación de la función para pedir una fecha, que recibe una cadena en lugar de leerla del usuario
 pedirFechaDesdeCadena :: String -> IO Day
 pedirFechaDesdeCadena fechaStr = do
     let formato = "%d/%m/%Y"
@@ -282,8 +322,6 @@ pedirFechaDesdeCadena fechaStr = do
             putStrLn "Fecha inválida. Por favor, ingrese una fecha válida."
             nuevaFechaStr <- getLine
             pedirFechaDesdeCadena nuevaFechaStr
-
-
 
 
 
