@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo, salaPorCodigo,leerSalas, leerNumeroCodigo, SalaReuniones(..)) where
+module SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo, salaPorCodigo,leerSalas, leerNumeroCodigo, SalaReuniones(..), mostrarSala) where
 
 import System.IO (hFlush, stdout)
 import Data.Aeson (FromJSON, ToJSON, eitherDecode, encode)

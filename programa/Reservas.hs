@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva, validarDatosEdicion,Reserva) where
+module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, Reserva) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
@@ -11,8 +11,9 @@ import Data.List (find, isPrefixOf)
 import Data.Maybe (isNothing, fromJust, mapMaybe)
 import Data.List.Split (splitOn)
 import GHC.Generics (Generic)
+import Data.Time (Day, parseTimeM, defaultTimeLocale)
 
-import SalaReuniones (salaPorCodigo, leerNumeroCodigo, SalaReuniones(..))
+import SalaReuniones (salaPorCodigo, leerNumeroCodigo, mostrarSala, SalaReuniones(..), leerSalas)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 
 --Definición de reserva
@@ -323,6 +324,93 @@ pedirFechaDesdeCadena fechaStr = do
             nuevaFechaStr <- getLine
             pedirFechaDesdeCadena nuevaFechaStr
 
+-- Función para consultar las salas disponibles para una fecha
+consultarSalasDisponibles :: IO ()
+consultarSalasDisponibles = do
+    -- Pedir la fecha a consultar
+    fechaConsulta <- pedirFechaConsulta "Ingrese la fecha a consultar (dd/mm/yyyy): "
 
+    -- Leer las salas desde el archivo
+    resultadoSalas <- leerSalas "salas.json"
+    case resultadoSalas of
+        Left err -> putStrLn ("Error al leer las salas: " ++ err)
+        Right salas -> do
+            -- Leer las reservas desde el archivo
+            resultadoReservas <- leerReservas "reservas.json"
+            case resultadoReservas of
+                Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+                Right reservas -> do
+                    -- Filtrar las salas que están disponibles (no reservadas para esa fecha)
+                    let salasDisponibles = filtrarSalasDisponibles salas reservas fechaConsulta
 
+                    -- Mostrar las salas disponibles
+                    if null salasDisponibles
+                        then putStrLn "No hay salas disponibles para la fecha especificada."
+                        else do
+                            putStrLn "Salas disponibles para la fecha solicitada:"
+                            mapM_ mostrarSala salasDisponibles
 
+-- Filtrar las salas que no están reservadas para una fecha dada
+filtrarSalasDisponibles :: [SalaReuniones] -> [Reserva] -> Day -> [SalaReuniones]
+filtrarSalasDisponibles salas reservas fechaConsulta = 
+    filter (\sala -> not (existeReserva reservas (codigoSala sala) fechaConsulta)) salas
+
+-- Función para pedir una fecha desde la entrada del usuario
+pedirFechaConsulta :: String -> IO Day
+pedirFechaConsulta mensaje = do
+    putStr mensaje
+    hFlush stdout
+    fechaStr <- getLine
+    let formato = "%d/%m/%Y"
+    case parseTimeM True defaultTimeLocale formato fechaStr of
+        Just fechaValida -> return fechaValida
+        Nothing -> do
+            putStrLn "Fecha inválida. Por favor, ingrese una fecha válida."
+            pedirFechaConsulta mensaje
+
+-- Función para pedir el rango de fechas
+pedirRangoFechas :: IO (Day, Day)
+pedirRangoFechas = do
+    fechaInicio <- pedirFechaConsulta "Ingrese la fecha inicial (dd/mm/yyyy): "
+    fechaFin <- pedirFechaConsulta "Ingrese la fecha final (dd/mm/yyyy): "
+    return (fechaInicio, fechaFin)
+
+-- Generar una lista de fechas entre la fecha de inicio y la fecha de fin
+generarFechasEnRango :: Day -> Day -> [Day]
+generarFechasEnRango fechaInicio fechaFin = 
+    [fechaInicio .. fechaFin]
+
+-- Función para consultar el estado de las salas en un rango de fechas
+consultarEstadoSalasEnRango :: IO ()
+consultarEstadoSalasEnRango = do
+    -- Pedir el rango de fechas
+    (fechaInicio, fechaFin) <- pedirRangoFechas
+
+    -- Generar la lista de fechas en el rango
+    let fechasRango = generarFechasEnRango fechaInicio fechaFin
+
+    -- Leer las salas desde el archivo
+    resultadoSalas <- leerSalas "salas.json"
+    case resultadoSalas of
+        Left err -> putStrLn ("Error al leer las salas: " ++ err)
+        Right salas -> do
+            -- Leer las reservas desde el archivo
+            resultadoReservas <- leerReservas "reservas.json"
+            case resultadoReservas of
+                Left err -> putStrLn ("Error al leer las reservas: " ++ err)
+                Right reservas -> do
+                    -- Mostrar el estado de las salas para cada fecha en el rango
+                    mapM_ (mostrarEstadoSalasPorFecha reservas salas) fechasRango
+
+-- Mostrar el estado de las salas para una fecha
+mostrarEstadoSalasPorFecha :: [Reserva] -> [SalaReuniones] -> Day -> IO ()
+mostrarEstadoSalasPorFecha reservas salas fecha = do
+    putStrLn $ "\nEstado de las salas para la fecha: " ++ show fecha
+    putStrLn "+--------------------------+"
+    mapM_ (mostrarEstadoSala fecha reservas) salas
+
+-- Mostrar si una sala está reservada o disponible para una fecha específica
+mostrarEstadoSala :: Day -> [Reserva] -> SalaReuniones -> IO ()
+mostrarEstadoSala fecha reservas sala = do
+    let estaReservada = existeReserva reservas (codigoSala sala) fecha
+    putStrLn $ "Sala: " ++ codigoSala sala ++ " - "  ++  if estaReservada then "Reservada" else "Disponible"
