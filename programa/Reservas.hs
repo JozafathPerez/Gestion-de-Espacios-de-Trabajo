@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, mostrarTodasLasReservas, mostrarEstadisticas, Reserva) where
+module Reservas (leerReservas, buscarReservaPorCodigo, crearReserva, agregarReserva, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, mostrarTodasLasReservas, mostrarEstadisticas, Reserva(codigoReserva)) where
 
 --Dependencias
 import System.IO (hFlush, stdout)
@@ -180,7 +180,7 @@ crearReserva reservasExistentes = do
     -- Verificar si ya existe una reserva con el mismo código de sala y fecha
     if existeReserva reservasExistentes codigoS fechaValida
         then do
-            putStrLn "La fecha no está disponible para la sala seleccionada. Por favor, elija otra fecha."
+            putStrLn "La fecha no está disponible para la sala seleccionada. Por favor, inice la reserva desde 0."
             crearReserva reservasExistentes  -- Volver a crear la reserva
         else do
             -- Pedir y validar la cantidad de personas

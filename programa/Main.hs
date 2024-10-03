@@ -2,7 +2,7 @@ import System.IO (hFlush, stdout)
 import Usuarios (leerUsuarios, validarUsuario, Usuario(..))
 import Mobiliario (cargarYMostrarMobiliario)
 import SalaReuniones (crearYMostrarSala, mostrarSalaPorCodigo)
-import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, mostrarTodasLasReservas, mostrarEstadisticas)
+import Reservas (leerReservas, crearReserva, agregarReserva, buscarReservaPorCodigo, eliminarReserva, editarReserva, validarDatosEdicion, consultarSalasDisponibles, consultarEstadoSalasEnRango, mostrarTodasLasReservas, mostrarEstadisticas, Reserva(codigoReserva))
 import Data.Maybe (isNothing, fromJust)
 
 
@@ -162,7 +162,7 @@ subMenuConsulta archivoReservas = do
     putStrLn "|        Menú de Diponibilidad           |"
     putStrLn "+----------------------------------------+"
     putStrLn "| 1 | Consultar una fecha.               |"
-    putStrLn "| 2 | Consultar un ragon de fechas.      |"
+    putStrLn "| 2 | Consultar un rango de fechas.      |"
     putStrLn "| 0 | Salir al menu Generales.           |"
     putStrLn "+----------------------------------------+"
     putStr "Seleccione una opción: "
@@ -182,7 +182,7 @@ subMenuConsulta archivoReservas = do
 showGenerales :: IO ()
 showGenerales = do
     putStrLn "+-----------------------------------+"
-    putStrLn "|        OPCIONES GENERALE         |"
+    putStrLn "|        OPCIONES GENERALES         |"
     putStrLn "+-----------------------------------+"
     putStrLn "| 1 | Gestión de Reserva            |"
     putStrLn "| 2 | Consultar Reserva             |"
@@ -207,7 +207,11 @@ handleGenerales option = case option of
             Right reservasExistentes -> do
                 -- Crear una nueva reserva
                 nuevaReserva <- crearReserva reservasExistentes
-                putStrLn ("Reserva creada: " ++ show nuevaReserva)
+                    -- Crear una variable para el código de reserva
+                let codigoR = codigoReserva nuevaReserva
+
+                -- Mostrar el código de reserva
+                putStrLn ("Código de reserva: " ++ show codigoR)
                 -- Agregar la nueva reserva a la lista
                 agregarReserva "reservas.json" nuevaReserva
 
